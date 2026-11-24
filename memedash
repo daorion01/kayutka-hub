@@ -1,0 +1,244 @@
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+local LP = Players.LocalPlayer
+getgenv().MemeDashKayutkaConfig = {
+    SpeedHack = false,
+    WalkSpeed = 16,
+    WallFling = false,
+    AutoJump = false,
+    AutoFarmLevel = false,
+    RemoveWalls = false,
+    Noclip = false,
+    AntiAFK = true
+}
+
+local ICON_ID = "rbxassetid://71955065795398"
+local PURPLE_COLOR = Color3.fromRGB(168, 85, 247)
+local Lang, AirPos, hiddenWalls = "VI", nil, {}
+local Locales = {
+    VI = {
+        Speed = "Tốc độ (1 - 676767)",
+        SpeedHack = "Speed Hack",
+        WallFling = "Fling Tường",
+        AutoJump = "Nhảy Tự Động",
+        AutoFarm = "Farm Màn [Bay]",
+        RemoveWalls = "Xóa Tường Tàng Hình",
+        Noclip = "Noclip",
+        AntiAFK = "Chống AFK"
+    },
+    EN = {
+        Speed = "Speed (1 - 676767)",
+        SpeedHack = "Speed Hack",
+        WallFling = "Wall Fling",
+        AutoJump = "Auto Jump",
+        AutoFarm = "Air Farm",
+        RemoveWalls = "Remove Invisible Walls",
+        Noclip = "Noclip",
+        AntiAFK = "Anti-AFK"
+    }
+}
+
+-- Anti-AFK thân thiện với Mobile (không dùng VirtualInputManager)
+LP.Idled:Connect(function()
+    if getgenv().MemeDashKayutkaConfig.AntiAFK then
+        local cam = workspace.CurrentCamera
+        if cam then
+            cam.CFrame = cam.CFrame * CFrame.Angles(0, math.rad(1), 0)
+        end
+    end
+end)
+
+local function setWalls(on)
+    if on then
+        table.clear(hiddenWalls)
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") and v.Transparency >= 0.99 and v.CanCollide then
+                hiddenWalls[v] = true
+                v.CanCollide = false
+            end
+        end
+    else
+        for p in pairs(hiddenWalls) do
+            if p and p.Parent then p.CanCollide = true end
+        end
+        table.clear(hiddenWalls)
+    end
+end
+
+local GuiParent = (syn and syn.protect_gui) and CoreGui or (gethui and gethui() or CoreGui)
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name, Gui.ResetOnSpawn, Gui.IgnoreGuiInset, Gui.DisplayOrder, Gui.ZIndexBehavior = "MemeDashKayutkaGui", false, true, 999999, Enum.ZIndexBehavior.Sibling
+if syn and syn.protect_gui then syn.protect_gui(Gui) end
+Gui.Parent = GuiParent
+
+local ToggleBtn = Instance.new("ImageButton", Gui)
+ToggleBtn.Size, ToggleBtn.Position, ToggleBtn.BackgroundColor3 = UDim2.new(0, 44, 0, 44), UDim2.new(0, 15, 0, 70), Color3.fromRGB(15, 15, 25)
+ToggleBtn.Image, ToggleBtn.Draggable, ToggleBtn.Active, ToggleBtn.Visible = ICON_ID, true, true, true
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
+Instance.new("UIStroke", ToggleBtn).Color = PURPLE_COLOR
+
+local Main = Instance.new("Frame", Gui)
+Main.Size, Main.Position, Main.BackgroundColor3 = UDim2.new(0, 360, 0, 340), UDim2.new(0.5, -180, 0.5, -170), Color3.fromRGB(15, 15, 22)
+Main.Active, Main.Draggable, Main.Visible = true, true, true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+Instance.new("UIStroke", Main).Color = PURPLE_COLOR
+
+ToggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+UIS.InputBegan:Connect(function(i, gp)
+    if not gp and i.KeyCode == Enum.KeyCode.RightShift then
+        Main.Visible = not Main.Visible
+    end
+end)
+
+local Title = Instance.new("TextLabel", Main)
+Title.Size, Title.BackgroundColor3, Title.Text = UDim2.new(1, 0, 0, 36), Color3.fromRGB(22, 22, 32), "  MemeDash Kayutka"
+Title.TextColor3, Title.TextSize, Title.Font, Title.TextXAlignment = PURPLE_COLOR, 13, Enum.Font.GothamBold, Enum.TextXAlignment.Left
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 12)
+
+local Close = Instance.new("TextButton", Title)
+Close.Size, Close.Position, Close.BackgroundColor3, Close.Text = UDim2.new(0, 24, 0, 24), UDim2.new(1, -30, 0.5, -12), Color3.fromRGB(255, 71, 87), "✕"
+Close.TextColor3, Close.TextSize, Close.Font = Color3.new(1, 1, 1), 12, Enum.Font.GothamBold
+Instance.new("UICorner", Close).CornerRadius = UDim.new(0, 6)
+Close.MouseButton1Click:Connect(function()
+    setWalls(false)
+    Gui:Destroy()
+end)
+
+local LangBtn = Instance.new("TextButton", Title)
+LangBtn.Size, LangBtn.Position, LangBtn.BackgroundColor3, LangBtn.Text = UDim2.new(0, 52, 0, 24), UDim2.new(1, -88, 0.5, -12), PURPLE_COLOR, "VI/EN"
+LangBtn.TextColor3, LangBtn.TextSize, LangBtn.Font = Color3.new(1, 1, 1), 11, Enum.Font.GothamBold
+Instance.new("UICorner", LangBtn).CornerRadius = UDim.new(0, 6)
+
+local List = Instance.new("ScrollingFrame", Main)
+List.Size, List.Position, List.BackgroundTransparency = UDim2.new(1, -14, 1, -44), UDim2.new(0, 7, 0, 40), 1
+List.CanvasSize, List.AutomaticCanvasSize, List.ScrollBarThickness = UDim2.new(0, 0, 0, 0), Enum.AutomaticSize.Y, 3
+local Layout = Instance.new("UIListLayout", List)
+Layout.SortOrder, Layout.Padding = Enum.SortOrder.LayoutOrder, UDim.new(0, 5)
+
+local Refs = {}
+local function AddToggle(key, def, cb)
+    local F = Instance.new("Frame", List)
+    F.Size, F.BackgroundColor3 = UDim2.new(1, 0, 0, 34), Color3.fromRGB(22, 22, 32)
+    Instance.new("UICorner", F).CornerRadius = UDim.new(0, 7)
+
+    local L = Instance.new("TextLabel", F)
+    L.Size, L.Position, L.BackgroundTransparency = UDim2.new(0.7, 0, 1, 0), UDim2.new(0, 10, 0, 0), 1
+    L.Text, L.TextColor3, L.TextSize, L.Font, L.TextXAlignment = Locales[Lang][key], Color3.fromRGB(240, 240, 250), 12, Enum.Font.GothamMedium, Enum.TextXAlignment.Left
+    table.insert(Refs, { L = L, K = key })
+
+    local B = Instance.new("TextButton", F)
+    B.Size, B.Position, B.BackgroundColor3, B.Text = UDim2.new(0, 38, 0, 18), UDim2.new(1, -46, 0.5, -9), def and PURPLE_COLOR or Color3.fromRGB(45, 45, 65), ""
+    Instance.new("UICorner", B).CornerRadius = UDim.new(1, 0)
+
+    local C = Instance.new("Frame", B)
+    C.Size, C.Position, C.BackgroundColor3 = UDim2.new(0, 14, 0, 14), def and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7), Color3.new(1, 1, 1)
+    Instance.new("UICorner", C).CornerRadius = UDim.new(1, 0)
+
+    local s = def
+    B.MouseButton1Click:Connect(function()
+        s = not s
+        C.Position = s and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+        B.BackgroundColor3 = s and PURPLE_COLOR or Color3.fromRGB(45, 45, 65)
+        cb(s)
+    end)
+end
+
+local function AddNum(key, def, minV, maxV, cb)
+    local F = Instance.new("Frame", List)
+    F.Size, F.BackgroundColor3 = UDim2.new(1, 0, 0, 34), Color3.fromRGB(22, 22, 32)
+    Instance.new("UICorner", F).CornerRadius = UDim.new(0, 7)
+
+    local L = Instance.new("TextLabel", F)
+    L.Size, L.Position, L.BackgroundTransparency = UDim2.new(0.55, 0, 1, 0), UDim2.new(0, 10, 0, 0), 1
+    L.Text, L.TextColor3, L.TextSize, L.Font, L.TextXAlignment = Locales[Lang][key], Color3.fromRGB(240, 240, 250), 12, Enum.Font.GothamMedium, Enum.TextXAlignment.Left
+    table.insert(Refs, { L = L, K = key })
+
+    local TB = Instance.new("TextBox", F)
+    TB.Size, TB.Position, TB.BackgroundColor3 = UDim2.new(0, 80, 0, 22), UDim2.new(1, -88, 0.5, -11), Color3.fromRGB(32, 32, 45)
+    TB.Text, TB.TextColor3, TB.TextSize, TB.Font = tostring(def), PURPLE_COLOR, 12, Enum.Font.GothamBold
+    Instance.new("UICorner", TB).CornerRadius = UDim.new(0, 6)
+    TB.FocusLost:Connect(function()
+        local v = tonumber(TB.Text)
+        if v then
+            v = math.clamp(v, minV, maxV)
+            TB.Text = tostring(v)
+            cb(v)
+        else
+            TB.Text = tostring(def)
+        end
+    end)
+end
+
+LangBtn.MouseButton1Click:Connect(function()
+    Lang = Lang == "VI" and "EN" or "VI"
+    for _, r in ipairs(Refs) do r.L.Text = Locales[Lang][r.K] end
+end)
+
+LP.CharacterAdded:Connect(function()
+    AirPos = nil
+end)
+
+AddToggle("SpeedHack", false, function(s)
+    getgenv().MemeDashKayutkaConfig.SpeedHack = s
+    if not s and LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
+        LP.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
+    end
+end)
+AddNum("Speed", 16, 1, 676767, function(v) getgenv().MemeDashKayutkaConfig.WalkSpeed = v end)
+AddToggle("WallFling", false, function(s) getgenv().MemeDashKayutkaConfig.WallFling = s end)
+AddToggle("AutoJump", false, function(s) getgenv().MemeDashKayutkaConfig.AutoJump = s end)
+AddToggle("AutoFarm", false, function(s)
+    getgenv().MemeDashKayutkaConfig.AutoFarmLevel = s
+    local r = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+    AirPos = (s and r) and (r.Position + Vector3.new(0, 60, 0)) or nil
+end)
+AddToggle("RemoveWalls", false, function(s)
+    getgenv().MemeDashKayutkaConfig.RemoveWalls = s
+    setWalls(s)
+end)
+AddToggle("Noclip", false, function(s)
+    getgenv().MemeDashKayutkaConfig.Noclip = s
+    if not s and LP.Character then
+        for _, p in ipairs(LP.Character:GetDescendants()) do
+            if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then p.CanCollide = true end
+        end
+    end
+end)
+AddToggle("AntiAFK", true, function(s) getgenv().MemeDashKayutkaConfig.AntiAFK = s end)
+
+RunService.RenderStepped:Connect(function()
+    local cfg, char = getgenv().MemeDashKayutkaConfig, LP.Character
+    if not char then return end
+    local hum, root = char:FindFirstChildOfClass("Humanoid"), char:FindFirstChild("HumanoidRootPart")
+    if hum and root then
+        if cfg.SpeedHack then hum.WalkSpeed = cfg.WalkSpeed end
+        if cfg.WallFling then
+            local op = OverlapParams.new()
+            op.FilterType, op.FilterDescendantsInstances = Enum.RaycastFilterType.Exclude, { char }
+            for _, p in ipairs(workspace:GetPartBoundsInBox(root.CFrame, root.Size + Vector3.new(1, 1, 1), op)) do
+                if p.CanCollide then
+                    root.AssemblyLinearVelocity = root.CFrame.LookVector * 150 + Vector3.new(0, 50, 0)
+                    break
+                end
+            end
+        end
+        if cfg.AutoJump and hum.FloorMaterial ~= Enum.Material.Air and not cfg.AutoFarmLevel then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+        if cfg.AutoFarmLevel then
+            if not AirPos then AirPos = root.Position + Vector3.new(0, 60, 0) end
+            root.CFrame, root.AssemblyLinearVelocity = CFrame.new(AirPos), Vector3.zero
+        end
+    end
+    if cfg.Noclip then
+        for _, p in ipairs(char:GetDescendants()) do
+            if p:IsA("BasePart") then p.CanCollide = false end
+        end
+    end
+end)
