@@ -1,0 +1,116 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+if not player then
+	return
+end
+
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- إزالة أي واجهة سابقة
+local oldGui = playerGui:FindFirstChild("KayutkaMemeDashUI")
+if oldGui then
+	oldGui:Destroy()
+end
+
+local state = {
+	SpeedEnabled = true,
+	SpeedValue = 32,
+	DefaultSpeed = 16,
+	AutoJumpEnabled = true,
+	JumpCooldown = 0.22
+}
+
+local lastJump = 0
+
+local function getHumanoid()
+	local char = player.Character
+	if not char then
+		return nil
+	end
+	return char:FindFirstChildOfClass("Humanoid")
+end
+
+local function applySpeed(hum)
+	if not hum or hum.Health <= 0 then
+		return
+	end
+	local targetSpeed = state.SpeedEnabled and state.SpeedValue or state.DefaultSpeed
+	if hum.WalkSpeed ~= targetSpeed then
+		pcall(function()
+			hum.WalkSpeed = targetSpeed
+		end)
+	end
+end
+
+local function hookCharacter(char)
+	if not char then
+		return
+	end
+	local hum = char:WaitForChild("Humanoid", 10)
+	if not hum then
+		return
+	end
+
+	applySpeed(hum)
+
+	hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+		if state.SpeedEnabled then
+			applySpeed(hum)
+		end
+	end)
+end
+
+if player.Character then
+	task.spawn(hookCharacter, player.Character)
+end
+
+player.CharacterAdded:Connect(function(char)
+	task.spawn(hookCharacter, char)
+end)
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "KayutkaMemeDashUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 310, 0, 315)
+mainFrame.Position = UDim2.new(0.5, -155, 0.5, -157)
+mainFrame.BackgroundColor3 = Color3.fromRGB(22, 14, 36)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 14)
+mainCorner.Parent = mainFrame
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(170, 95, 255)
+mainStroke.Thickness = 1.6
+mainStroke.Parent = mainFrame
+
+local bgGradient = Instance.new("UIGradient")
+bgGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(44, 24, 72)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 12, 30))
+})
+bgGradient.Rotation = 135
+bgGradient.Parent = mainFrame
+
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 56)
+header.BackgroundColor3 = Color3.fromRGB(48, 26, 82)
+header.BorderSizePixel = 0
+header.Parent = mainFrame
+
+local headerCorner = Instance.new("UICorner")
+headerCorner.CornerRadius = UDim.new(0, 14)
+headerCorner.Parent = header
+
+local badgeLabel = Instance.new("TextLabel")
+badgeLabel.Size = UDim2.new(0, 40, 0, 40)
+badgeLabel.Position = UDim2.new(0, 10,
